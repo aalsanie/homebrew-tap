@@ -1,0 +1,59 @@
+name: Formula install and lifecycle tests
+
+on:
+  pull_request:
+    paths:
+      - 'Formula/distroplane.rb'
+  push:
+    branches: [main]
+    paths:
+      - 'Formula/distroplane.rb'
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: Install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up Homebrew on Linux
+        if: runner.os == 'Linux'
+        uses: Homebrew/actions/setup-homebrew@fd832223f9f99ebf0244dd20658680e5d4aca049
+        with:
+          core: false
+          cask: false
+      - name: Audit, install, execute, and uninstall reviewed formula
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew tap aalsanie/tap
+          tap="$(brew --repository aalsanie/tap)"
+          cp Formula/distroplane.rb "$tap/Formula/distroplane.rb"
+          HOMEBREW_NO_AUTO_UPDATE=1 brew audit --strict aalsanie/tap/distroplane
+          if git show origin/main:Formula/distroplane.rb > old-formula.rb 2>/dev/null; then
+            cp old-formula.rb "$tap/Formula/distroplane.rb"
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install aalsanie/tap/distroplane
+            cp Formula/distroplane.rb "$tap/Formula/distroplane.rb"
+            HOMEBREW_NO_AUTO_UPDATE=1 brew upgrade aalsanie/tap/distroplane
+          else
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install aalsanie/tap/distroplane
+          fi
+          HOMEBREW_NO_AUTO_UPDATE=1 brew test aalsanie/tap/distroplane
+          distroplane version
+          for name in homebrew npm sdkman winget; do
+            test -x "$(brew --prefix aalsanie/tap/distroplane)/libexec/distroplane-provider-$name"
+          done
+          HOMEBREW_NO_AUTO_UPDATE=1 brew uninstall aalsanie/tap/distroplane
+          if command -v distroplane >/dev/null; then
+            echo 'Distroplane remains on PATH after uninstall' >&2
+            exit 1
+          fi
