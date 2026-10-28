@@ -38,13 +38,16 @@ jobs:
           brew tap aalsanie/tap
           tap="$(brew --repository aalsanie/tap)"
           test -f Formula/distroplane.rb
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          cp Formula/distroplane.rb "$work/reviewed.rb"
           mkdir -p "$tap/Formula"
-          cp Formula/distroplane.rb "$tap/Formula/distroplane.rb"
+          cp "$work/reviewed.rb" "$tap/Formula/distroplane.rb"
           HOMEBREW_NO_AUTO_UPDATE=1 brew audit --strict aalsanie/tap/distroplane
           if git show origin/main:Formula/distroplane.rb > old-formula.rb 2>/dev/null; then
             cp old-formula.rb "$tap/Formula/distroplane.rb"
             HOMEBREW_NO_AUTO_UPDATE=1 brew install aalsanie/tap/distroplane
-            cp Formula/distroplane.rb "$tap/Formula/distroplane.rb"
+            cp "$work/reviewed.rb" "$tap/Formula/distroplane.rb"
             HOMEBREW_NO_AUTO_UPDATE=1 brew upgrade aalsanie/tap/distroplane
           else
             HOMEBREW_NO_AUTO_UPDATE=1 brew install aalsanie/tap/distroplane
@@ -82,8 +85,7 @@ jobs:
                   or "1" not in response.get("payload", {}).get("protocolVersions", [])):
                   raise SystemExit(f"invalid {name} provider identity/protocol")
           PY
-          state_root="$(mktemp -d)"
-          trap 'rm -rf "$state_root"' EXIT
+          state_root="$work/state"
           mkdir -p "$state_root/.distroplane"
           printf 'active-run\n' > "$state_root/.distroplane/run-marker"
           HOMEBREW_NO_AUTO_UPDATE=1 brew uninstall aalsanie/tap/distroplane
