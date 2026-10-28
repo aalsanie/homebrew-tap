@@ -59,6 +59,9 @@ jobs:
           prefix = Path(subprocess.check_output(
               ["brew", "--prefix", "aalsanie/tap/distroplane"], text=True
           ).strip())
+          version = json.loads(subprocess.check_output(
+              ["distroplane", "version", "--json"], text=True
+          ))["version"]
           for name in ("homebrew", "npm", "sdkman", "winget"):
               executable = prefix / "libexec" / f"distroplane-provider-{name}"
               if not executable.is_file():
@@ -75,6 +78,7 @@ jobs:
                   or response.get("operation") != "describe"
                   or response.get("status") != "ok"
                   or response.get("payload", {}).get("provider", {}).get("name") != name
+                  or response.get("payload", {}).get("provider", {}).get("version") != version
                   or "1" not in response.get("payload", {}).get("protocolVersions", [])):
                   raise SystemExit(f"invalid {name} provider identity/protocol")
           PY
