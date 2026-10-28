@@ -1,0 +1,94 @@
+name: Formula install and lifecycle tests
+
+on:
+  pull_request:
+    paths:
+      - 'Formula/distroplane.rb'
+  push:
+    branches: [main]
+    paths:
+      - 'Formula/distroplane.rb'
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: Install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, ubuntu-latest, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up Homebrew on Linux
+        if: runner.os == 'Linux'
+        uses: Homebrew/actions/setup-homebrew@fd832223f9f99ebf0244dd20658680e5d4aca049
+        with:
+          core: false
+          cask: false
+      - name: Audit, install, execute, and uninstall reviewed formula
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew tap aalsanie/tap
+          tap="$(brew --repository aalsanie/tap)"
+          test -f Formula/distroplane.rb
+          mkdir -p "$tap/Formula"
+          cp Formula/distroplane.rb "$tap/Formula/distroplane.rb"
+          HOMEBREW_NO_AUTO_UPDATE=1 brew audit --strict aalsanie/tap/distroplane
+          if git show origin/main:Formula/distroplane.rb > old-formula.rb 2>/dev/null; then
+            cp old-formula.rb "$tap/Formula/distroplane.rb"
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install aalsanie/tap/distroplane
+            cp Formula/distroplane.rb "$tap/Formula/distroplane.rb"
+            HOMEBREW_NO_AUTO_UPDATE=1 brew upgrade aalsanie/tap/distroplane
+          else
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install aalsanie/tap/distroplane
+          fi
+          HOMEBREW_NO_AUTO_UPDATE=1 brew test aalsanie/tap/distroplane
+          distroplane version
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+
+          prefix = Path(subprocess.check_output(
+              ["brew", "--prefix", "aalsanie/tap/distroplane"], text=True
+          ).strip())
+          version = json.loads(subprocess.check_output(
+              ["distroplane", "version", "--json"], text=True
+          ))["version"]
+          for name in ("homebrew", "npm", "sdkman", "winget"):
+              executable = prefix / "libexec" / f"distroplane-provider-{name}"
+              if not executable.is_file():
+                  raise SystemExit(f"missing provider executable: {executable}")
+              request = {"protocolVersion": "1", "requestId": "brew-smoke",
+                         "operation": "describe", "payload": {}}
+              result = subprocess.run(
+                  [str(executable)], input=json.dumps(request), text=True,
+                  capture_output=True, check=True, timeout=20,
+              )
+              response = json.loads(result.stdout)
+              if (response.get("protocolVersion") != "1"
+                  or response.get("requestId") != "brew-smoke"
+                  or response.get("operation") != "describe"
+                  or response.get("status") != "ok"
+                  or response.get("payload", {}).get("provider", {}).get("name") != name
+                  or response.get("payload", {}).get("provider", {}).get("version") != version
+                  or "1" not in response.get("payload", {}).get("protocolVersions", [])):
+                  raise SystemExit(f"invalid {name} provider identity/protocol")
+          PY
+          state_root="$(mktemp -d)"
+          trap 'rm -rf "$state_root"' EXIT
+          mkdir -p "$state_root/.distroplane"
+          printf 'active-run\n' > "$state_root/.distroplane/run-marker"
+          HOMEBREW_NO_AUTO_UPDATE=1 brew uninstall aalsanie/tap/distroplane
+          test "$(cat "$state_root/.distroplane/run-marker")" = active-run
+          if command -v distroplane >/dev/null; then
+            echo 'Distroplane remains on PATH after uninstall' >&2
+            exit 1
+          fi
