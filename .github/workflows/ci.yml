@@ -90,6 +90,7 @@ jobs:
           printf 'active-run\n' > "$state_root/.distroplane/run-marker"
           HOMEBREW_NO_AUTO_UPDATE=1 brew uninstall aalsanie/tap/distroplane
           test "$(cat "$state_root/.distroplane/run-marker")" = active-run
+          hash -r
           if command -v distroplane >/dev/null; then
             echo 'Distroplane remains on PATH after uninstall' >&2
             exit 1
