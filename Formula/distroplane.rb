@@ -1,7 +1,6 @@
 class Distroplane < Formula
   desc "Distribute verified release artifacts to registries and package managers"
   homepage "https://github.com/aalsanie/distroplane"
-  version "0.9.1"
   license "Apache-2.0"
 
   on_macos do
