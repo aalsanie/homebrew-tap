@@ -36,6 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           brew tap aalsanie/tap
+          brew trust --formula aalsanie/tap/distroplane
           tap="$(brew --repository aalsanie/tap)"
           test -f Formula/distroplane.rb
           work="$(mktemp -d)"
