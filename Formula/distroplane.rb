@@ -5,23 +5,23 @@ class Distroplane < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/aalsanie/distroplane/releases/download/v0.9.2/distroplane_0.9.2_darwin_arm64.tar.gz"
-      sha256 "d9f1546c2c931a7dc0232659004d29b955a40b132fe7b500a39525a2c6ee4297"
+      url "https://github.com/aalsanie/distroplane/releases/download/v0.9.3/distroplane_0.9.3_darwin_arm64.tar.gz"
+      sha256 "5cb937c44cb407d2456123a0f2f9e50b6a6f703f095fd88b80265cdf60e504a7"
     end
     on_intel do
-      url "https://github.com/aalsanie/distroplane/releases/download/v0.9.2/distroplane_0.9.2_darwin_amd64.tar.gz"
-      sha256 "3b1708fd866a1264528321c33e816e6b09ab8989927578d1a7e9733aa31f2693"
+      url "https://github.com/aalsanie/distroplane/releases/download/v0.9.3/distroplane_0.9.3_darwin_amd64.tar.gz"
+      sha256 "2a2f96ef2d03df67da9c28b58c737dcd2533553f5e660da58ee06f1588e7f181"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/aalsanie/distroplane/releases/download/v0.9.2/distroplane_0.9.2_linux_arm64.tar.gz"
-      sha256 "8d5f25b686921d3a963d8f2e6d5b1cf2255117ac51f037b840577a4ee486af03"
+      url "https://github.com/aalsanie/distroplane/releases/download/v0.9.3/distroplane_0.9.3_linux_arm64.tar.gz"
+      sha256 "36bdfb83209cfe7060ebffca28b85b4996d4fdc3b05d130e732b7b6426432055"
     end
     on_intel do
-      url "https://github.com/aalsanie/distroplane/releases/download/v0.9.2/distroplane_0.9.2_linux_amd64.tar.gz"
-      sha256 "c9ae97ce774815a6b9625a6d73f09eb7058ae08bdaa76321c0d52532eb202717"
+      url "https://github.com/aalsanie/distroplane/releases/download/v0.9.3/distroplane_0.9.3_linux_amd64.tar.gz"
+      sha256 "900e4e55aa4c54990c053d2cb7c55b5c7e814a76f76314c266380a53ab88335c"
     end
   end
 
